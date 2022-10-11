@@ -608,13 +608,9 @@ class BdGeo
     {
         $geo_index = array_search($type, self::$parent_order);
 
-        if ($geo_index === 0) {
-            return collect(with(new static)->$type);
-        }
-
-        return  count($parent_id) ?
-                collect(with(new static)->$type)->whereIn(self::$parent_order[$geo_index - 1] . '_id', $parent_id) :
-                collect(with(new static)->$type);
+        return ($geo_index === 0 || ! count($parent_id)) ?
+               collect(with(new static)->$type) :
+               collect(with(new static)->$type)->whereIn(self::$parent_order[$geo_index - 1] . '_id', $parent_id);
     }
 
     /**
