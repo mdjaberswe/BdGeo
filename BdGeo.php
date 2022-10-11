@@ -9,7 +9,7 @@ class BdGeo
      *
      * @var array
      */
-    protected $divisions = [
+    protected $division = [
         ['id' => 1, 'name' => 'Barishal'],
         ['id' => 2, 'name' => 'Chattogram'],
         ['id' => 3, 'name' => 'Dhaka'],
@@ -25,7 +25,7 @@ class BdGeo
      *
      * @var array
      */
-    protected $districts = [
+    protected $district = [
         ['id' => 1, 'division_id' => 3, 'name' => 'Dhaka'],
         ['id' => 2, 'division_id' => 3, 'name' => 'Faridpur'],
         ['id' => 3, 'division_id' => 3, 'name' => 'Gazipur'],
@@ -97,7 +97,7 @@ class BdGeo
      *
      * @var array
      */
-    protected $upazilas = [
+    protected $upazila = [
         ['id' => 1, 'district_id' => 34, 'name' => 'Amtali'],
         ['id' => 2, 'district_id' => 34, 'name' => 'Bamna'],
         ['id' => 3, 'district_id' => 34, 'name' => 'Barguna Sadar'],
@@ -594,42 +594,27 @@ class BdGeo
         ['id' => 495, 'district_id' => 7, 'name' => 'Dasar'],
     ];
 
-    /**
-     * Get divisions collection
-     *
-     * @return \Illuminate\Support\Collection
-     */
-    public static function getDivisions()
-    {
-        return collect(with(new static)->divisions);
-    }
+    protected static $parent_order = ['division', 'distinct', 'upazila'];
 
     /**
-     * Get districts collection
+     * Get geo type collection
      *
-     * @param array $division_id
+     * @param string $type
+     * @param array  $parent_id
      *
      * @return \Illuminate\Support\Collection
      */
-    public static function getDistricts($division_id = [])
+    public static function getGeoType($type, $parent_id = [])
     {
-        return count($division_id) ?
-               collect(with(new static)->districts)->whereIn('division_id', $division_id) :
-               collect(with(new static)->districts);
-    }
+        $geo_index = array_search($type, self::$parent_order);
 
-    /**
-     * Get upazila collection
-     *
-     * @param array $district_id
-     *
-     * @return \Illuminate\Support\Collection
-     */
-    public static function getUpazilas($district_id = [])
-    {
-        return count($district_id) ?
-               collect(with(new static)->upazilas)->whereIn('district_id', $district_id) :
-               collect(with(new static)->upazilas);
+        if ($geo_index === 0) {
+            return collect(with(new static)->$type);
+        }
+
+        return  count($parent_id) ?
+                collect(with(new static)->$type)->whereIn(self::$parent_order[$geo_index - 1], $parent_id) :
+                collect(with(new static)->$type);
     }
 
     /**
@@ -642,13 +627,7 @@ class BdGeo
      */
     public static function getCommaSeparatedIds($geo_type, $parent_id = [])
     {
-        $getGeoTypes = 'get' . ucfirst($geo_type);
-
-        $ids = self::$getGeoTypes($parent_id)->pluck('id')->toArray();
-
-        $ids = implode(',', $ids);
-
-        return $ids;
+        return implode(',', self::getGeoType($geo_type, $parent_id)->pluck('id')->toArray());
     }
 
     /**
@@ -664,15 +643,15 @@ class BdGeo
         $district_id = is_null($applicant) ? [] : [$applicant->district_id];
 
         $geo_list['collection'] = [
-            'divisions' => self::getDivisions(),
-            'districts' => self::getDistricts($division_id),
-            'upazilas' => self::getUpazilas($district_id),
+            'division' => self::getGeoType('division'),
+            'district' => self::getGeoType('district', $division_id),
+            'upazila' => self::getGeoType('upazila', $district_id),
         ];
 
         $geo_list['dropdown'] = [
-            'divisions' => $geo_list['collection']['divisions']->pluck('name', 'id')->toArray(),
-            'districts' => $geo_list['collection']['districts']->pluck('name', 'id')->toArray(),
-            'upazilas' => $geo_list['collection']['upazilas']->pluck('name', 'id')->toArray(),
+            'division' => $geo_list['collection']['division']->pluck('name', 'id')->toArray(),
+            'district' => $geo_list['collection']['district']->pluck('name', 'id')->toArray(),
+            'upazila' => $geo_list['collection']['upazila']->pluck('name', 'id')->toArray(),
         ];
 
         return $geo_list;
