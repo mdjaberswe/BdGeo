@@ -613,7 +613,7 @@ class BdGeo
         }
 
         return  count($parent_id) ?
-                collect(with(new static)->$type)->whereIn(self::$parent_order[$geo_index - 1], $parent_id) :
+                collect(with(new static)->$type)->whereIn(self::$parent_order[$geo_index - 1] . '_id', $parent_id) :
                 collect(with(new static)->$type);
     }
 
